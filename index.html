@@ -1,53 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>The Alt HAN ECO: Earth Day Special</title>
   <style>
-    html,body {
-      margin:   0;
-      padding:  0;
-      height:   5000px;        /* page scroll length */
-      background:black;
-      overflow-x:hidden;
-      font-family:sans-serif;
-      color:white;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 5000px;      /* scrollable length */
+      background: black;
+      overflow-x: hidden;
+      font-family: sans-serif;
+      color: white;
     }
     .headline {
       position: fixed;
-      top:      20px;
-      width:    100%;
-      text-align:center;
-      font-size:2em;
-      color:    cyan;
-      z-index:  10;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 2em;
+      color: cyan;
+      z-index: 10;
     }
     .video-container {
       position: fixed;
-      top:      0;
-      left:     0;
-      width:    100vw;
-      height:   100vh;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
       overflow: hidden;
-      z-index:  0;
+      z-index: 0;
     }
     video {
-      width:     100vw;
-      height:    100vh;
+      width: 100vw; height: 100vh;
       object-fit: cover;
-      pointer-events:none;
-      display:    block;
+      display: block;
+      pointer-events: none;
     }
     .debug {
       position: fixed;
-      bottom:   10px;
-      left:     10px;
+      bottom: 10px; left: 10px;
+      padding: 5px;
       background: rgba(0,0,0,0.5);
-      color:      #0f0;
-      padding:    5px;
-      font-size:  0.8em;
-      z-index:    20;
+      color: #0f0;
+      font-size: 0.8em;
+      z-index: 20;
     }
   </style>
 </head>
@@ -62,37 +58,28 @@
   <div class="debug" id="dbg">⏳ loading…</div>
 
   <script>
-    const video      = document.getElementById('earthVideo');
-    const dbg        = document.getElementById('dbg');
-    let   targetTime = 0;
-
-    video.addEventListener('error', e => {
-      dbg.textContent = '⚠️ Video load error';
-      console.error(e);
-    });
+    const video = document.getElementById('earthVideo');
+    const dbg   = document.getElementById('dbg');
 
     video.addEventListener('loadedmetadata', () => {
-      const duration    = video.duration;                              // ~5s
+      const duration    = video.duration;                      // ~5s
       const scrollRange = document.body.scrollHeight - window.innerHeight;
-      const timePerPx   = duration / scrollRange;
 
       dbg.textContent = `▶ duration: ${duration.toFixed(2)}s`;
 
-      // Wheel-driven scrub:
-      window.addEventListener('wheel', e => {
-        // adjust targetTime by the wheel delta
-        targetTime += e.deltaY * timePerPx;
-        // clamp between 0 and duration
-        targetTime = Math.max(0, Math.min(targetTime, duration));
-        e.preventDefault();      // prevent page jump if you like
-      }, {passive:false});
-
-      // rAF loop to apply instantly
-      (function render() {
-        video.currentTime = targetTime;
-        dbg.textContent   = `wheel Δ: ${(targetTime).toFixed(2)}s`;
-        requestAnimationFrame(render);
+      // Continuous loop: every frame map scroll to video time
+      (function loop() {
+        const scrollY = window.scrollY;
+        const frac    = Math.min(Math.max(scrollY / scrollRange, 0), 1);
+        video.currentTime = frac * duration;
+        dbg.textContent    = `scrollY: ${scrollY}px → time: ${video.currentTime.toFixed(2)}s`;
+        requestAnimationFrame(loop);
       })();
+    });
+
+    video.addEventListener('error', e => {
+      dbg.textContent = '⚠️ Video failed to load';
+      console.error(e);
     });
   </script>
 </body>
