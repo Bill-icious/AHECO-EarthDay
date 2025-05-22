@@ -6,9 +6,8 @@
   <title>The Alt HAN ECO: Earth Day Special</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 5000px;      /* scrollable length */
+      margin: 0; padding: 0;
+      height: 5000px; /* scroll length */
       background: black;
       overflow-x: hidden;
       font-family: sans-serif;
@@ -16,41 +15,33 @@
     }
     .headline {
       position: fixed;
-      top: 20px;
-      width: 100%;
+      top: 20px; width: 100%;
       text-align: center;
-      font-size: 2em;
-      color: cyan;
+      font-size: 2em; color: cyan;
       z-index: 10;
     }
     .video-container {
-      position: fixed;
-      top: 0; left: 0;
+      position: fixed; top: 0; left: 0;
       width: 100vw; height: 100vh;
-      overflow: hidden;
-      z-index: 0;
+      overflow: hidden; z-index: 0;
     }
     video {
       width: 100vw; height: 100vh;
       object-fit: cover;
-      display: block;
       pointer-events: none;
+      display: block;
     }
     .debug {
-      position: fixed;
-      bottom: 10px; left: 10px;
-      padding: 5px;
-      background: rgba(0,0,0,0.5);
-      color: #0f0;
-      font-size: 0.8em;
-      z-index: 20;
+      position: fixed; bottom: 10px; left: 10px;
+      padding: 5px; background: rgba(0,0,0,0.5);
+      color: #0f0; font-size: 0.8em; z-index: 20;
     }
   </style>
 </head>
 <body>
   <div class="headline">The Alt HAN ECO: Earth Day Special</div>
   <div class="video-container">
-    <video id="earthVideo" muted preload="auto">
+    <video id="earthVideo" muted playsinline preload="auto">
       <source src="earthday.mp4" type="video/mp4">
       Your browser doesn’t support HTML5 video.
     </video>
@@ -60,27 +51,32 @@
   <script>
     const video = document.getElementById('earthVideo');
     const dbg   = document.getElementById('dbg');
-
-    video.addEventListener('loadedmetadata', () => {
-      const duration    = video.duration;                      // ~5s
-      const scrollRange = document.body.scrollHeight - window.innerHeight;
-
-      dbg.textContent = `▶ duration: ${duration.toFixed(2)}s`;
-
-      // Continuous loop: every frame map scroll to video time
-      (function loop() {
-        const scrollY = window.scrollY;
-        const frac    = Math.min(Math.max(scrollY / scrollRange, 0), 1);
-        video.currentTime = frac * duration;
-        dbg.textContent    = `scrollY: ${scrollY}px → time: ${video.currentTime.toFixed(2)}s`;
-        requestAnimationFrame(loop);
-      })();
-    });
+    let   duration, scrollRange;
 
     video.addEventListener('error', e => {
-      dbg.textContent = '⚠️ Video failed to load';
+      dbg.textContent = '⚠️ Video load error';
       console.error(e);
     });
+
+    video.addEventListener('loadedmetadata', () => {
+      duration    = video.duration;
+      scrollRange = document.body.scrollHeight - window.innerHeight;
+      dbg.textContent = `▶ duration: ${duration.toFixed(2)}s`;
+
+      // Primer: play then pause so seeking works frame-by-frame
+      video.play();
+      video.pause();
+
+      requestAnimationFrame(loop);
+    });
+
+    function loop() {
+      // map scroll to time
+      const frac = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
+      video.currentTime = frac * duration;
+      dbg.textContent = `scrollY: ${window.scrollY.toFixed(0)}px → time: ${video.currentTime.toFixed(2)}s`;
+      requestAnimationFrame(loop);
+    }
   </script>
 </body>
 </html>
