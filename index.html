@@ -3,65 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Earth Day Special</title>
+  <title>The Alt HAN ECO: Earth Day Special</title>
   <style>
     html, body {
-      margin:0; padding:0; height:5000px; background:#000; overflow-x:hidden;
-      font-family:sans-serif;
+      margin: 0;
+      padding: 0;
+      height: 5000px;      /* adjust scroll length as needed */
+      background: black;
+      overflow-x: hidden;
+      font-family: sans-serif;
+      color: white;
     }
+
     .headline {
-      position:fixed; top:20px; width:100%; text-align:center;
-      font-size:2em; color:#6ff; z-index:10;
+      position: fixed;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 2em;
+      color: cyan;
+      z-index: 10;
     }
+
     .video-container {
-      position:fixed; top:0; left:0; width:100vw; height:100vh;
-      overflow:hidden; z-index:0;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      z-index: 0;
     }
+
     video {
-      width:100vw; height:100vh; object-fit:cover;
-      pointer-events:none; display:block;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      pointer-events: none;
+      display: block;
     }
+
     .debug {
-      position:fixed; bottom:10px; left:10px; color:#fff; font-size:0.8em;
-      background:rgba(0,0,0,0.5); padding:5px; z-index:20;
+      position: fixed;
+      bottom: 10px; left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: #0f0;
+      padding: 5px;
+      font-size: 0.8em;
+      z-index: 20;
     }
   </style>
 </head>
 <body>
   <div class="headline">The Alt HAN ECO: Earth Day Special</div>
+
   <div class="video-container">
     <video id="earthVideo" muted preload="auto">
       <source src="earthday.mp4" type="video/mp4">
-      <!-- fallback text -->
-      Your browser doesn’t support video.
+      Your browser doesn’t support HTML5 video.
     </video>
   </div>
-  <div class="debug" id="dbg">● loading…</div>
+
+  <div class="debug" id="dbg">⏳ loading…</div>
 
   <script>
-    const dbg = document.getElementById('dbg');
     const video = document.getElementById('earthVideo');
+    const dbg   = document.getElementById('dbg');
+    let   targetTime = 0;
 
     video.addEventListener('error', e => {
-      dbg.textContent = '⚠️ Video error: ' + e.message;
-      console.error('Video load error:', e);
+      dbg.textContent = '⚠️ Video load error';
+      console.error(e);
     });
 
     video.addEventListener('loadedmetadata', () => {
-      dbg.textContent = '▶ metadata loaded: duration=' + video.duration.toFixed(2) + 's';
+      dbg.textContent = `▶ duration: ${video.duration.toFixed(2)}s`;
       const scrollRange = document.body.scrollHeight - window.innerHeight;
 
+      // update only the target time on scroll
       window.addEventListener('scroll', () => {
         const frac = window.scrollY / scrollRange;
-        video.currentTime = frac * video.duration;
-        dbg.textContent = 
-          `scrollY=${window.scrollY}px  ▶  time=${video.currentTime.toFixed(2)}s`;
+        targetTime = frac * video.duration;
       });
-    });
 
-    // In case playback is blocked, log it
-    video.addEventListener('play', () => console.log('▶ Video playing'));
-    video.addEventListener('pause', () => console.log('⏸ Video paused'));
+      // drive the actual seeks in a rAF loop
+      (function scrub() {
+        // Uncomment below for a slight easing effect:
+        // video.currentTime += (targetTime - video.currentTime) * 0.1;
+        video.currentTime = targetTime;
+        dbg.textContent = `scrollY: ${window.scrollY}px  →  time: ${video.currentTime.toFixed(2)}s`;
+        requestAnimationFrame(scrub);
+      })();
+    });
   </script>
 </body>
 </html>
