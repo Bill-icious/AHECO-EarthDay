@@ -7,7 +7,7 @@
   <style>
     html, body {
       margin: 0; padding: 0;
-      height: 5000px; /* scroll length */
+      height: 5000px;               /* Scrollable height */
       background: black;
       overflow-x: hidden;
       font-family: sans-serif;
@@ -15,68 +15,96 @@
     }
     .headline {
       position: fixed;
-      top: 20px; width: 100%;
+      top: 20px; left: 0; right: 0;
       text-align: center;
-      font-size: 2em; color: cyan;
+      font-size: 2em;
+      color: cyan;
       z-index: 10;
     }
-    .video-container {
-      position: fixed; top: 0; left: 0;
-      width: 100vw; height: 100vh;
-      overflow: hidden; z-index: 0;
-    }
-    video {
+    canvas {
+      position: fixed;
+      top: 0; left: 0;
       width: 100vw; height: 100vh;
       object-fit: cover;
-      pointer-events: none;
+      z-index: 0;
       display: block;
     }
     .debug {
-      position: fixed; bottom: 10px; left: 10px;
-      padding: 5px; background: rgba(0,0,0,0.5);
-      color: #0f0; font-size: 0.8em; z-index: 20;
+      position: fixed;
+      bottom: 10px; left: 10px;
+      background: rgba(0,0,0,0.6);
+      color: #0f0; padding: 5px;
+      font-size: 0.8em; z-index: 20;
     }
   </style>
 </head>
 <body>
   <div class="headline">The Alt HAN ECO: Earth Day Special</div>
-  <div class="video-container">
-    <video id="earthVideo" muted playsinline preload="auto">
-      <source src="earthday.mp4" type="video/mp4">
-      Your browser doesn’t support HTML5 video.
-    </video>
-  </div>
+  <canvas id="videoCanvas"></canvas>
   <div class="debug" id="dbg">⏳ loading…</div>
 
   <script>
-    const video = document.getElementById('earthVideo');
-    const dbg   = document.getElementById('dbg');
-    let   duration, scrollRange;
+    const canvas = document.getElementById('videoCanvas');
+    const ctx    = canvas.getContext('2d');
+    const dbg    = document.getElementById('dbg');
+    const video  = document.createElement('video');
+    video.src    = 'earthday.mp4';
+    video.muted  = true;
+    video.preload= 'auto';
+    video.playsInline = true;
 
-    video.addEventListener('error', e => {
-      dbg.textContent = '⚠️ Video load error';
-      console.error(e);
-    });
+    let duration, scrollRange, targetTime = 0, lastSeek = -1;
 
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Once metadata arrives, set up scroll mapping
     video.addEventListener('loadedmetadata', () => {
       duration    = video.duration;
       scrollRange = document.body.scrollHeight - window.innerHeight;
       dbg.textContent = `▶ duration: ${duration.toFixed(2)}s`;
 
-      // Primer: play then pause so seeking works frame-by-frame
-      video.play();
-      video.pause();
+      // Prime the buffer
+      video.play(); video.pause();
 
+      // Seeked event: draw exactly that frame
+      video.addEventListener('seeked', () => {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      });
+
+      // Start the render loop
       requestAnimationFrame(loop);
     });
 
+    video.addEventListener('error', e => {
+      dbg.textContent = '⚠️ Video error';
+      console.error(e);
+    });
+
     function loop() {
-      // map scroll to time
+      // Map scroll to a time
       const frac = Math.min(Math.max(window.scrollY / scrollRange, 0), 1);
-      video.currentTime = frac * duration;
-      dbg.textContent = `scrollY: ${window.scrollY.toFixed(0)}px → time: ${video.currentTime.toFixed(2)}s`;
+      targetTime = frac * duration;
+
+      // Only seek if we crossed a frame boundary
+      if (Math.abs(targetTime - lastSeek) > (1/30)) {
+        lastSeek = targetTime;
+        video.currentTime = targetTime;
+      }
+
+      // Update debug
+      dbg.textContent = `scrollY: ${window.scrollY.toFixed(0)}px → time: ${targetTime.toFixed(2)}s`;
+
       requestAnimationFrame(loop);
     }
+
+    // Kick off loading
+    video.load();
   </script>
 </body>
 </html>
