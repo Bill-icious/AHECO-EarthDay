@@ -1,71 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Alt HAN ECO: Earth Day Special</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Earth Day Special</title>
   <style>
     html, body {
-      margin: 0;
-      padding: 0;
-      height: 5000px; /* Allows scroll room */
-      background-color: black;
-      overflow-x: hidden;
-      font-family: sans-serif;
-      color: white;
+      margin:0; padding:0; height:5000px; background:#000; overflow-x:hidden;
+      font-family:sans-serif;
     }
     .headline {
-      position: fixed;
-      top: 20px;
-      width: 100%;
-      text-align: center;
-      font-size: 2em;
-      color: cyan;
-      z-index: 10;
+      position:fixed; top:20px; width:100%; text-align:center;
+      font-size:2em; color:#6ff; z-index:10;
     }
     .video-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      z-index: 0;
+      position:fixed; top:0; left:0; width:100vw; height:100vh;
+      overflow:hidden; z-index:0;
     }
     video {
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      pointer-events: none;
+      width:100vw; height:100vh; object-fit:cover;
+      pointer-events:none; display:block;
+    }
+    .debug {
+      position:fixed; bottom:10px; left:10px; color:#fff; font-size:0.8em;
+      background:rgba(0,0,0,0.5); padding:5px; z-index:20;
     }
   </style>
 </head>
 <body>
   <div class="headline">The Alt HAN ECO: Earth Day Special</div>
   <div class="video-container">
-    <video id="earthVideo" preload="auto" muted>
-      <source src="earthday.mp4" type="video/mp4" />
-      Your browser does not support the video tag.
+    <video id="earthVideo" muted preload="auto">
+      <source src="earthday.mp4" type="video/mp4">
+      <!-- fallback text -->
+      Your browser doesn’t support video.
     </video>
   </div>
+  <div class="debug" id="dbg">● loading…</div>
 
   <script>
+    const dbg = document.getElementById('dbg');
     const video = document.getElementById('earthVideo');
 
-    // Wait for metadata to load so we know duration
+    video.addEventListener('error', e => {
+      dbg.textContent = '⚠️ Video error: ' + e.message;
+      console.error('Video load error:', e);
+    });
+
     video.addEventListener('loadedmetadata', () => {
+      dbg.textContent = '▶ metadata loaded: duration=' + video.duration.toFixed(2) + 's';
       const scrollRange = document.body.scrollHeight - window.innerHeight;
 
-      // Sync scroll to video playback
       window.addEventListener('scroll', () => {
-        const scrollPos = window.scrollY;
-        const scrollFraction = scrollPos / scrollRange;
-        video.currentTime = scrollFraction * video.duration;
+        const frac = window.scrollY / scrollRange;
+        video.currentTime = frac * video.duration;
+        dbg.textContent = 
+          `scrollY=${window.scrollY}px  ▶  time=${video.currentTime.toFixed(2)}s`;
       });
-
-      // Prevent auto play
-      video.pause();
     });
+
+    // In case playback is blocked, log it
+    video.addEventListener('play', () => console.log('▶ Video playing'));
+    video.addEventListener('pause', () => console.log('⏸ Video paused'));
   </script>
 </body>
 </html>
